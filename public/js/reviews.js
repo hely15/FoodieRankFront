@@ -1,8 +1,15 @@
-// Reviews Module - Corregido y funcional
+// Reviews Module - Fixed ID handling and review submission
 (() => {
   // Abrir modal de reseña
   function openReviewModal(type, itemId) {
     console.log('Opening review modal for:', type, itemId);
+    
+    if (!itemId || itemId === 'undefined') {
+      console.error('Invalid item ID provided:', itemId);
+      window.FoodieRank.utils.showNotification("Error: ID del elemento no válido", "error");
+      return;
+    }
+
     if (!window.FoodieRank.auth.isAuthenticated()) {
       window.FoodieRank.utils.showNotification("Debes iniciar sesión para escribir una reseña", "error");
       return;
@@ -13,7 +20,7 @@
         <div class="modal-content">
           <span class="close" onclick="window.FoodieRank.utils.closeModal('reviewModal')">&times;</span>
           <h2>Escribir Reseña</h2>
-          <form id="reviewForm">
+          <form id="reviewForm" data-type="${type}" data-item-id="${itemId}">
             <div class="form-group">
               <label>Calificación:</label>
               <div class="rating-input">
@@ -52,17 +59,22 @@
     document.body.insertAdjacentHTML("beforeend", modalHTML);
 
     // Agregar event listener al formulario
-    document.getElementById("reviewForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      handleReviewSubmit(type, itemId);
-    });
+    document.getElementById("reviewForm").addEventListener("submit", handleReviewSubmit);
 
     // Agregar estilos para las estrellas
     addStarRatingStyles();
   }
 
   // Manejar envío de reseña
-  async function handleReviewSubmit(type, itemId) {
+  async function handleReviewSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const type = form.dataset.type;
+    const itemId = form.dataset.itemId;
+    
+    console.log('Submitting review for:', type, itemId);
+
     const rating = document.querySelector('input[name="rating"]:checked')?.value;
     const comment = document.getElementById("reviewComment").value.trim();
 
@@ -73,6 +85,11 @@
 
     if (!comment) {
       window.FoodieRank.utils.showNotification("Por favor escribe un comentario", "error");
+      return;
+    }
+
+    if (!itemId || itemId === 'undefined') {
+      window.FoodieRank.utils.showNotification("Error: ID del elemento no válido", "error");
       return;
     }
 
@@ -88,18 +105,25 @@
         reviewData.restaurant = itemId;
       } else if (type === "dish") {
         reviewData.dish = itemId;
+      } else {
+        throw new Error("Tipo de reseña no válido");
       }
+
+      console.log('Review data to send:', reviewData);
 
       await window.FoodieRank.api.createReview(reviewData);
       window.FoodieRank.utils.showNotification("Reseña creada exitosamente", "success");
       window.FoodieRank.utils.closeModal("reviewModal");
 
       // Refrescar el modal de detalles
-      if (type === "restaurant") {
-        window.FoodieRank.restaurants.showRestaurantDetails(itemId);
-      } else if (type === "dish") {
-        window.FoodieRank.restaurants.showDishDetails(itemId);
-      }
+      setTimeout(() => {
+        if (type === "restaurant") {
+          window.FoodieRank.restaurants.showRestaurantDetails(itemId);
+        } else if (type === "dish") {
+          window.FoodieRank.restaurants.showDishDetails(itemId);
+        }
+      }, 500);
+
     } catch (error) {
       console.error("Error creating review:", error);
       window.FoodieRank.utils.showNotification(error.message || "Error al crear la reseña", "error");
@@ -249,6 +273,7 @@
         display: flex;
         gap: 5px;
         margin: 10px 0;
+        direction: rtl;
       }
       
       .rating-input input[type="radio"] {
@@ -260,16 +285,15 @@
         color: #ddd;
         cursor: pointer;
         transition: color 0.2s;
+        direction: ltr;
       }
       
       .rating-input label:hover,
-      .rating-input label:hover ~ label,
-      .rating-input input[type="radio"]:checked ~ label {
+      .rating-input label:hover ~ label {
         color: #ffd700;
       }
       
-      .rating-input input[type="radio"]:checked + label,
-      .rating-input input[type="radio"]:checked + label ~ label {
+      .rating-input input[type="radio"]:checked ~ label {
         color: #ffd700;
       }
       

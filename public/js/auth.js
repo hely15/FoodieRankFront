@@ -1,4 +1,4 @@
-// Authentication Module - Corregido y funcional
+// Authentication Module - Fixed login response handling
 (() => {
   // Variables privadas del módulo
   let currentUser = null;
@@ -37,7 +37,7 @@
         showAdminFeatures();
       }
 
-      // ← AGREGAR ESTO: Actualizar modales abiertos
+      // AGREGAR ESTO: Actualizar modales abiertos
       updateModalsForAuthenticatedUser();
     } else {
       // Mostrar botones de login/register
@@ -48,7 +48,7 @@
     }
   }
 
-    function updateModalsForAuthenticatedUser() {
+  function updateModalsForAuthenticatedUser() {
     // Si hay un modal de restaurante o plato abierto, actualizarlo
     const restaurantModal = document.getElementById("restaurantModal");
     const dishModal = document.getElementById("dishModal");
@@ -59,7 +59,7 @@
         window.FoodieRank.restaurants.showRestaurantDetails(restaurantId);
       }
     }
-    
+
     if (dishModal && dishModal.style.display === "block") {
       const dishId = dishModal.querySelector(".dish-detail")?.dataset?.id;
       if (dishId) {
@@ -111,6 +111,7 @@
 
   async function handleLogin(event) {
     event.preventDefault();
+    console.log('Handle login initiated'); // Debug
 
     const elements = getElements();
     const email = elements.loginEmail.value.trim();
@@ -123,15 +124,37 @@
 
     try {
       const response = await window.FoodieRank.api.login(email, password);
+      console.log('Login API response:', response); // Debug
+
+      // FIXED: Handle different response structures from backend
+      let token = null;
+      let user = null;
 
       if (response.token && response.user) {
-        authToken = response.token;
-        currentUser = response.user;
+        // Direct structure
+        token = response.token;
+        user = response.user;
+      } else if (response.token && response.data) {
+        // Backend returns user in response.data
+        token = response.token;
+        user = response.data;
+      } else if (response.success && response.token && response.data) {
+        // Backend returns with success flag
+        token = response.token;
+        user = response.data;
+      }
+
+      if (token && user) {
+        authToken = token;
+        currentUser = user;
 
         // Guardar en localStorage
         localStorage.setItem("authToken", authToken);
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
 
+        console.log('User authenticated:', currentUser); // Debug
+
+        // ACTUALIZAR LA UI INMEDIATAMENTE
         updateAuthUI();
 
         // Cerrar modal y mostrar notificación
@@ -141,13 +164,45 @@
         // Limpiar formulario
         elements.loginForm.reset();
 
+        // FORZAR ACTUALIZACIÓN DE MODALES ABIERTOS
+        setTimeout(() => {
+          refreshOpenModals();
+        }, 100);
+
         // Redirect to restaurants
         window.location.hash = "#restaurantes";
         document.getElementById("restaurantes").scrollIntoView({ behavior: "smooth" });
+      } else {
+        throw new Error("Respuesta de login inválida del servidor");
       }
     } catch (error) {
       console.error("Login error:", error);
       window.FoodieRank.utils.showNotification(error.message || "Error al iniciar sesión", "error");
+    }
+  }
+
+  // AGREGAR ESTA NUEVA FUNCIÓN
+  function refreshOpenModals() {
+    console.log('Refreshing open modals...'); // Debug
+
+    // Actualizar modal de restaurante si está abierto
+    const restaurantModal = document.getElementById("restaurantModal");
+    if (restaurantModal && restaurantModal.style.display === "block") {
+      const restaurantId = restaurantModal.querySelector('.restaurant-card')?.dataset?.restaurantId;
+      if (restaurantId) {
+        console.log('Refreshing restaurant modal:', restaurantId);
+        window.FoodieRank.restaurants.showRestaurantDetails(restaurantId);
+      }
+    }
+
+    // Actualizar modal de plato si está abierto
+    const dishModal = document.getElementById("dishModal");
+    if (dishModal && dishModal.style.display === "block") {
+      const dishId = dishModal.querySelector('.dish-card')?.dataset?.dishId;
+      if (dishId) {
+        console.log('Refreshing dish modal:', dishId);
+        window.FoodieRank.restaurants.showDishDetails(dishId);
+      }
     }
   }
 
@@ -175,9 +230,24 @@
     try {
       const response = await window.FoodieRank.api.register(userData);
       
+      // Handle different response structures for register too
+      let token = null;
+      let user = null;
+
       if (response.token && response.user) {
-        authToken = response.token;
-        currentUser = response.user;
+        token = response.token;
+        user = response.user;
+      } else if (response.token && response.data) {
+        token = response.token;
+        user = response.data;
+      } else if (response.success && response.token && response.data) {
+        token = response.token;
+        user = response.data;
+      }
+
+      if (token && user) {
+        authToken = token;
+        currentUser = user;
 
         // Guardar en localStorage
         localStorage.setItem("authToken", authToken);
@@ -193,6 +263,8 @@
         // Redirect to restaurants
         window.location.hash = "#restaurantes";
         document.getElementById("restaurantes").scrollIntoView({ behavior: "smooth" });
+      } else {
+        throw new Error("Respuesta de registro inválida del servidor");
       }
     } catch (error) {
       console.error("Register error:", error);
@@ -243,11 +315,17 @@
   function setupAuthEventListeners() {
     const elements = getElements();
 
+    console.log('Setting up auth event listeners...'); // Debug
+
     // Event listeners para botones
     if (elements.loginBtn) {
+      console.log('Login button found'); // Debug
       elements.loginBtn.addEventListener("click", () => {
+        console.log('Login button clicked'); // Debug
         window.FoodieRank.utils.openModal("loginModal");
       });
+    } else {
+      console.log('Login button NOT found'); // Debug
     }
 
     if (elements.registerBtn) {
@@ -260,16 +338,35 @@
       elements.logoutBtn.addEventListener("click", handleLogout);
     }
 
-    // Event listeners para formularios
+    // Event listeners para formularios - ¡ESTOS SON LOS IMPORTANTES!
     if (elements.loginForm) {
+      console.log('Login form found'); // Debug
       elements.loginForm.addEventListener("submit", handleLogin);
+    } else {
+      console.log('Login form NOT found'); // Debug
     }
 
     if (elements.registerForm) {
       elements.registerForm.addEventListener("submit", handleRegister);
     }
-  }
 
+    // También agrega event listeners para los botones de cerrar modal
+    const closeLogin = document.getElementById("closeLogin");
+    const closeRegister = document.getElementById("closeRegister");
+
+    if (closeLogin) {
+      closeLogin.addEventListener("click", () => {
+        window.FoodieRank.utils.closeModal("loginModal");
+      });
+    }
+
+    if (closeRegister) {
+      closeRegister.addEventListener("click", () => {
+        window.FoodieRank.utils.closeModal("registerModal");
+      });
+    }
+  }
+  
   // Funciones públicas
   function getCurrentUser() {
     return currentUser;
@@ -280,7 +377,9 @@
   }
 
   function isAuthenticated() {
-    return !!authToken && !!currentUser;
+    const isAuth = !!authToken && !!currentUser;
+    console.log('isAuthenticated check:', { hasToken: !!authToken, hasUser: !!currentUser, result: isAuth }); // Debug
+    return isAuth;
   }
 
   function isAdmin() {

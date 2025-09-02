@@ -6,27 +6,27 @@
   // Inicializar la aplicación
   function initApp() {
     if (isAppInitialized) return;
-
+  
     console.log("🍽️ Inicializando FoodieRank...");
-
+  
     try {
-      // 1. Inicializar autenticación
+      // 1. Inicializar autenticación PRIMERO
       if (window.FoodieRank.auth) {
         window.FoodieRank.auth.initAuth();
+        console.log('Auth initialized'); // Debug
       }
-
+    
       // 2. Configurar event listeners generales
       setupGlobalEventListeners();
-
+      console.log('Event listeners setup'); // Debug
+    
       // 3. Cargar datos iniciales
       loadInitialData();
-
-      // 4. Configurar filtros
-      setupFilters();
-
+      console.log('Initial data loaded'); // Debug
+    
       isAppInitialized = true;
       console.log("✅ FoodieRank inicializado correctamente");
-
+    
     } catch (error) {
       console.error("❌ Error al inicializar FoodieRank:", error);
       window.FoodieRank.utils.showNotification("Error al inicializar la aplicación", "error");

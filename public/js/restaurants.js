@@ -1,4 +1,4 @@
-// Restaurants Module - Corregido y funcional
+// Restaurants Module - Fixed dish ID passing
 (() => {
   // Variables del módulo
   let currentRestaurants = [];
@@ -224,7 +224,7 @@
       const restaurant = await window.FoodieRank.api.getRestaurantById(restaurantId);
       const reviews = await window.FoodieRank.api.getReviews({ restaurant: restaurantId, limit: 10 });
 
-      displayRestaurantModal(restaurant, reviews.reviews || []);
+      displayRestaurantModal(restaurant, reviews.reviews || [], restaurantId);
       window.FoodieRank.utils.openModal("restaurantModal");
     } catch (error) {
       console.error("Error loading restaurant details:", error);
@@ -238,7 +238,7 @@
       const dish = await window.FoodieRank.api.getDishById(dishId);
       const reviews = await window.FoodieRank.api.getReviews({ dish: dishId, limit: 10 });
 
-      displayDishModal(dish, reviews.reviews || []);
+      displayDishModal(dish, reviews.reviews || [], dishId);
       window.FoodieRank.utils.openModal("dishModal");
     } catch (error) {
       console.error("Error loading dish details:", error);
@@ -246,12 +246,19 @@
     }
   }
 
-  function displayRestaurantModal(restaurant, reviews) {
+  function displayRestaurantModal(restaurant, reviews, restaurantId) {
     const container = document.getElementById("restaurantDetails");
     if (!container) return;
 
+    // VERIFICACIÓN MÁS ROBUSTA DE AUTENTICACIÓN
+    const isAuthenticated = window.FoodieRank.auth && 
+                         window.FoodieRank.auth.isAuthenticated && 
+                         window.FoodieRank.auth.isAuthenticated();
+  
+    console.log('Display restaurant modal - authenticated:', isAuthenticated); // Debug
+
     container.innerHTML = `
-      <div class="restaurant-detail">
+      <div class="restaurant-detail" data-restaurant-id="${restaurantId}">
         <div class="restaurant-header">
           <img src="${restaurant.image || "/images/default-restaurant.jpg"}" 
                alt="${restaurant.name}" class="restaurant-detail-image">
@@ -270,24 +277,20 @@
             </div>
           </div>
         </div>
-        
+
         <div class="restaurant-description">
           <h3>Descripción</h3>
           <p>${restaurant.description || "Sin descripción disponible"}</p>
         </div>
 
-        ${
-          window.FoodieRank.auth && window.FoodieRank.auth.isAuthenticated()
-            ? `
+        ${isAuthenticated ? `
           <div class="review-form-section">
             <h3>Escribir una reseña</h3>
-            <button class="btn-primary" onclick="window.FoodieRank.reviews.openReviewModal('restaurant', '${restaurant._id}')">
+            <button class="btn-primary" onclick="window.FoodieRank.reviews.openReviewModal('restaurant', '${restaurantId}')">
               Escribir Reseña
             </button>
           </div>
-        `
-            : '<p class="login-prompt">Inicia sesión para escribir una reseña</p>'
-        }
+        ` : '<p class="login-prompt">Inicia sesión para escribir una reseña</p>'}
 
         <div class="reviews-section">
           <h3>Reseñas (${reviews.length})</h3>
@@ -316,57 +319,62 @@
     `;
   }
 
-  function displayDishModal(dish, reviews) {
+  function displayDishModal(dish, reviews, dishId) {
     const container = document.getElementById("dishDetails");
     if (!container) return;
 
+    // Verificar autenticación de manera segura
+    const isAuthenticated = window.FoodieRank.auth && window.FoodieRank.auth.isAuthenticated();
+
+    // FIXED: Extract dish data properly
+    const dishData = dish.data || dish;
+    const actualDishId = dishId || dishData._id;
+
+    console.log('Displaying dish modal with ID:', actualDishId); // Debug
+
     container.innerHTML = `
-      <div class="dish-detail">
+      <div class="dish-detail" data-dish-id="${actualDishId}">
         <div class="dish-header">
-          <img src="${dish.image || "/images/default-dish.jpg"}" 
-               alt="${dish.name}" class="dish-detail-image">
+          <img src="${dishData.image || "/images/default-dish.jpg"}" 
+               alt="${dishData.name}" class="dish-detail-image">
           <div class="dish-detail-info">
-            <h2>${dish.name}</h2>
-            <p class="dish-price">${window.FoodieRank.utils.formatPrice(dish.price || 0)}</p>
+            <h2>${dishData.name}</h2>
+            <p class="dish-price">${window.FoodieRank.utils.formatPrice(dishData.price || 0)}</p>
             <div class="rating">
-              <span class="stars">${window.FoodieRank.utils.generateStars(dish.averageRating || 0)}</span>
-              <span class="rating-text">${(dish.averageRating || 0).toFixed(1)}/5 (${reviews.length} reseñas)</span>
+              <span class="stars">${window.FoodieRank.utils.generateStars(dishData.averageRating || 0)}</span>
+              <span class="rating-text">${(dishData.averageRating || 0).toFixed(1)}/5 (${reviews.length} reseñas)</span>
             </div>
-            <p class="restaurant-info">En: ${dish.restaurant?.name || "Restaurante"}</p>
+            <p class="restaurant-info">En: ${dishData.restaurant?.name || "Restaurante"}</p>
           </div>
         </div>
-        
+
         <div class="dish-description">
           <h3>Descripción</h3>
-          <p>${dish.description || "Sin descripción disponible"}</p>
-          
-          ${dish.ingredients && dish.ingredients.length > 0 ? `
+          <p>${dishData.description || "Sin descripción disponible"}</p>
+
+          ${dishData.ingredients && dishData.ingredients.length > 0 ? `
             <div class="ingredients">
               <h4>Ingredientes:</h4>
-              <p>${dish.ingredients.join(", ")}</p>
+              <p>${dishData.ingredients.join(", ")}</p>
             </div>
           ` : ""}
           
-          ${dish.allergens && dish.allergens.length > 0 ? `
+          ${dishData.allergens && dishData.allergens.length > 0 ? `
             <div class="allergens">
               <h4>Alérgenos:</h4>
-              <p>${dish.allergens.join(", ")}</p>
+              <p>${dishData.allergens.join(", ")}</p>
             </div>
           ` : ""}
         </div>
 
-        ${
-          window.FoodieRank.auth && window.FoodieRank.auth.isAuthenticated()
-            ? `
+        ${isAuthenticated ? `
           <div class="review-form-section">
             <h3>Escribir una reseña</h3>
-            <button class="btn-primary" onclick="window.FoodieRank.reviews.openReviewModal('dish', '${dish._id}')">
+            <button class="btn-primary" onclick="window.FoodieRank.reviews.openReviewModal('dish', '${actualDishId}')">
               Escribir Reseña
             </button>
           </div>
-        `
-            : '<p class="login-prompt">Inicia sesión para escribir una reseña</p>'
-        }
+        ` : '<p class="login-prompt">Inicia sesión para escribir una reseña</p>'}
 
         <div class="reviews-section">
           <h3>Reseñas (${reviews.length})</h3>
@@ -394,7 +402,7 @@
       </div>
     `;
   }
-
+  
   // Filtrar por categoría
   function filterByCategory(categoryId) {
     const filters = {

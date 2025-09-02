@@ -70,13 +70,20 @@
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.style.display = "block";
+      console.log('Modal opened:', modalId); // Debug
+    } else {
+      console.log('Modal not found:', modalId); // Debug
     }
   }
-
+  
+  
   function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.style.display = "none";
+      console.log('Modal closed:', modalId); // Debug
+    } else {
+      console.log('Modal not found for closing:', modalId); // Debug
     }
   }
 
