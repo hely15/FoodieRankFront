@@ -2,6 +2,7 @@
 (() => {
   // Abrir modal de reseña
   function openReviewModal(type, itemId) {
+    console.log('Opening review modal for:', type, itemId);
     if (!window.FoodieRank.auth.isAuthenticated()) {
       window.FoodieRank.utils.showNotification("Debes iniciar sesión para escribir una reseña", "error");
       return;

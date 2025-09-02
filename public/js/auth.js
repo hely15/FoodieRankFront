@@ -36,12 +36,35 @@
       if (currentUser.role === "admin") {
         showAdminFeatures();
       }
+
+      // ← AGREGAR ESTO: Actualizar modales abiertos
+      updateModalsForAuthenticatedUser();
     } else {
       // Mostrar botones de login/register
       if (elements.loginBtn) elements.loginBtn.style.display = "block";
       if (elements.registerBtn) elements.registerBtn.style.display = "block";
       if (elements.userMenu) elements.userMenu.style.display = "none";
       hideAdminFeatures();
+    }
+  }
+
+    function updateModalsForAuthenticatedUser() {
+    // Si hay un modal de restaurante o plato abierto, actualizarlo
+    const restaurantModal = document.getElementById("restaurantModal");
+    const dishModal = document.getElementById("dishModal");
+    
+    if (restaurantModal && restaurantModal.style.display === "block") {
+      const restaurantId = restaurantModal.querySelector(".restaurant-detail")?.dataset?.id;
+      if (restaurantId) {
+        window.FoodieRank.restaurants.showRestaurantDetails(restaurantId);
+      }
+    }
+    
+    if (dishModal && dishModal.style.display === "block") {
+      const dishId = dishModal.querySelector(".dish-detail")?.dataset?.id;
+      if (dishId) {
+        window.FoodieRank.restaurants.showDishDetails(dishId);
+      }
     }
   }
 
@@ -100,7 +123,7 @@
 
     try {
       const response = await window.FoodieRank.api.login(email, password);
-      
+
       if (response.token && response.user) {
         authToken = response.token;
         currentUser = response.user;
@@ -110,6 +133,8 @@
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
 
         updateAuthUI();
+
+        // Cerrar modal y mostrar notificación
         window.FoodieRank.utils.closeModal("loginModal");
         window.FoodieRank.utils.showNotification("¡Inicio de sesión exitoso!", "success");
 
@@ -188,18 +213,26 @@
   }
 
   function initAuth() {
-    // Cargar datos guardados
+    // Cargar datos guardados con validación
     const savedToken = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("currentUser");
 
     if (savedToken && savedUser) {
       try {
+        // Validar que savedUser no sea "undefined" como string
+        if (savedUser === "undefined") {
+          throw new Error("Invalid user data");
+        }
+
         authToken = savedToken;
         currentUser = JSON.parse(savedUser);
       } catch (error) {
         console.error("Error parsing saved user data:", error);
+        // Limpiar datos corruptos
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
+        authToken = null;
+        currentUser = null;
       }
     }
 

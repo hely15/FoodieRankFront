@@ -15,7 +15,7 @@
         headers['Authorization'] = `Bearer ${token}`;
       }
     }
-    
+      
     return headers;
   }
 
@@ -25,7 +25,7 @@
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     console.log('API Response:', response.url, data); // ← Debug
     return data;
@@ -115,8 +115,22 @@
 
       const data = await handleResponse(response);
 
-      // ADAPTACIÓN: Tu backend devuelve categorías en data.data
-      return data.data || []; // ← Aquí está el cambio
+      // Manejar diferentes estructuras de respuesta
+      let categories = [];
+
+      if (data.data) {
+        if (Array.isArray(data.data)) {
+          categories = data.data;
+        } else if (data.data.categories) {
+          categories = data.data.categories;
+        }
+      } else if (Array.isArray(data)) {
+        categories = data;
+      } else if (data.categories) {
+        categories = data.categories;
+      }
+
+      return categories;
     },
 
 
@@ -155,9 +169,9 @@
 
     // Restaurantes
 
-    async getRestaurants(params = {}) {
+    async  getRestaurants(params = {}) {
       const queryParams = new URLSearchParams();
-
+        
       Object.keys(params).forEach(key => {
         if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
           queryParams.append(key, params[key]);
@@ -170,16 +184,31 @@
 
       const data = await handleResponse(response);
 
-      // ADAPTACIÓN: Tu backend devuelve los restaurantes en data.data
+      // Manejar diferentes estructuras de respuesta
+      let restaurants = [];
+      let pagination = {};
+
+      if (data.data) {
+        if (Array.isArray(data.data)) {
+          restaurants = data.data;
+        } else if (data.data.restaurants) {
+          restaurants = data.data.restaurants;
+          pagination = data.data.pagination || {};
+        }
+      } else if (data.restaurants) {
+        restaurants = data.restaurants;
+        pagination = data.pagination || {};
+      }
+
       return {
-        restaurants: data.data || [], // ← Aquí está el cambio
-        pagination: data.pagination || {
+        restaurants,
+        pagination: pagination || {
           page: parseInt(params.page) || 1,
           limit: parseInt(params.limit) || 12,
-          total: data.data ? data.data.length : 0
+          total: restaurants.length
         }
       };
-    },    
+    },
 
     async getRestaurantById(restaurantId) {
       const response = await fetch(`${API_BASE_URL}/restaurants/${restaurantId}`, {
@@ -237,13 +266,28 @@
 
       const data = await handleResponse(response);
 
-      // ADAPTACIÓN: Tu backend devuelve los platos en data.data
+      // Manejar diferentes estructuras de respuesta
+      let dishes = [];
+      let pagination = {};
+
+      if (data.data) {
+        if (Array.isArray(data.data)) {
+          dishes = data.data;
+        } else if (data.data.dishes) {
+          dishes = data.data.dishes;
+          pagination = data.data.pagination || {};
+        }
+      } else if (data.dishes) {
+        dishes = data.dishes;
+        pagination = data.pagination || {};
+      }
+
       return {
-        dishes: data.data || [], // ← Aquí está el cambio
-        pagination: data.pagination || {
+        dishes,
+        pagination: pagination || {
           page: parseInt(params.page) || 1,
           limit: parseInt(params.limit) || 8,
-          total: data.data ? data.data.length : 0
+          total: dishes.length
         }
       };
     },

@@ -17,23 +17,25 @@
 
   // Cargar y mostrar categorías
     async function loadCategories() {
+      console.log('Loading categories');
       const grid = document.getElementById("categoriesGrid");
       if (!grid) return;
     
       try {
         window.FoodieRank.utils.showLoading(grid);
-        
+
         // ADAPTACIÓN: Asegurar que categories sea un array
         let categories = await window.FoodieRank.api.getCategories({ active: true });
-        
+        console.log('Categories response:', categories);
+
         // Si categories es un objeto con propiedad data, extraerla
         if (categories && typeof categories === 'object' && categories.data) {
           categories = categories.data;
         }
-        
+
         // Asegurar que sea un array
         categories = Array.isArray(categories) ? categories : [];
-        
+
         displayCategories(categories);
       } catch (error) {
         console.error("Error loading categories:", error);
@@ -44,6 +46,8 @@
   function displayCategories(categories) {
     const grid = document.getElementById("categoriesGrid");
     if (!grid) return;
+
+    const categoriesArray = Array.isArray(categories) ? categories : [];
 
     if (!categories || categories.length === 0) {
       grid.innerHTML = '<p class="no-data">No hay categorías disponibles</p>';
@@ -73,6 +77,7 @@
 
   // Cargar y mostrar restaurantes
   async function loadRestaurants(filters = {}) {
+    console.log('Loading restaurants with filters:', filters);
     const grid = document.getElementById("restaurantsGrid");
     if (!grid) return;
 
@@ -86,6 +91,7 @@
       };
 
       const response = await window.FoodieRank.api.getRestaurants(params);
+      console.log('Restaurants response:', response);
 
       // ADAPTACIÓN: Extraer restaurantes de response.data
       const restaurantsData = response.data || response.restaurants || [];
