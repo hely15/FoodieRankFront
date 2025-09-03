@@ -196,7 +196,6 @@
                alt="${dish.name}" loading="lazy">
         </div>
         <div class="dish-info">
-          <h3>${dish.name}</h3>
           <p class="dish-description">${window.FoodieRank.utils.truncateText(dish.description || "", 100)}</p>
           <div class="dish-price">${window.FoodieRank.utils.formatPrice(dish.price || 0)}</div>
           <div class="dish-rating">
@@ -222,9 +221,16 @@
   async function showRestaurantDetails(restaurantId) {
     try {
       const restaurant = await window.FoodieRank.api.getRestaurantById(restaurantId);
-      const reviews = await window.FoodieRank.api.getReviews({ restaurant: restaurantId, limit: 10 });
+      const reviewsResponse = await window.FoodieRank.api.getReviews({ restaurant: restaurantId, limit: 10 });
 
-      displayRestaurantModal(restaurant, reviews.reviews || [], restaurantId);
+      // Extract restaurant data
+      const restaurantData = restaurant.data || restaurant;
+      
+      // Extract reviews data
+      const reviews = reviewsResponse.reviews || reviewsResponse.data || [];
+      console.log('Restaurant reviews:', reviews); // Debug
+
+      displayRestaurantModal(restaurantData, reviews, restaurantId);
       window.FoodieRank.utils.openModal("restaurantModal");
     } catch (error) {
       console.error("Error loading restaurant details:", error);
@@ -236,9 +242,16 @@
   async function showDishDetails(dishId) {
     try {
       const dish = await window.FoodieRank.api.getDishById(dishId);
-      const reviews = await window.FoodieRank.api.getReviews({ dish: dishId, limit: 10 });
+      const reviewsResponse = await window.FoodieRank.api.getReviews({ dish: dishId, limit: 10 });
 
-      displayDishModal(dish, reviews.reviews || [], dishId);
+      // Extract dish data
+      const dishData = dish.data || dish;
+      
+      // Extract reviews data
+      const reviews = reviewsResponse.reviews || reviewsResponse.data || [];
+      console.log('Dish reviews:', reviews); // Debug
+
+      displayDishModal(dishData, reviews, dishId);
       window.FoodieRank.utils.openModal("dishModal");
     } catch (error) {
       console.error("Error loading dish details:", error);
@@ -250,37 +263,41 @@
     const container = document.getElementById("restaurantDetails");
     if (!container) return;
 
+    // Extract restaurant data properly
+    const restaurantData = restaurant.data || restaurant;
+
     // VERIFICACIÓN MÁS ROBUSTA DE AUTENTICACIÓN
     const isAuthenticated = window.FoodieRank.auth && 
                          window.FoodieRank.auth.isAuthenticated && 
                          window.FoodieRank.auth.isAuthenticated();
   
     console.log('Display restaurant modal - authenticated:', isAuthenticated); // Debug
+    console.log('Restaurant reviews to display:', reviews); // Debug
 
     container.innerHTML = `
       <div class="restaurant-detail" data-restaurant-id="${restaurantId}">
         <div class="restaurant-header">
-          <img src="${restaurant.image || "/images/default-restaurant.jpg"}" 
-               alt="${restaurant.name}" class="restaurant-detail-image">
+          <img src="${restaurantData.image || "/images/default-restaurant.jpg"}" 
+               alt="${restaurantData.name}" class="restaurant-detail-image">
           <div class="restaurant-detail-info">
-            <h2>${restaurant.name}</h2>
-            <p class="cuisine-type">${Array.isArray(restaurant.cuisine) ? restaurant.cuisine.join(", ") : restaurant.cuisine || "Cocina variada"}</p>
-            <p class="address">${restaurant.address?.street || ""}, ${restaurant.address?.city || ""}</p>
+            <h2>${restaurantData.name}</h2>
+            <p class="cuisine-type">${Array.isArray(restaurantData.cuisine) ? restaurantData.cuisine.join(", ") : restaurantData.cuisine || "Cocina variada"}</p>
+            <p class="address">${restaurantData.address?.street || ""}, ${restaurantData.address?.city || ""}</p>
             <div class="rating">
-              <span class="stars">${window.FoodieRank.utils.generateStars(restaurant.averageRating || 0)}</span>
-              <span class="rating-text">${(restaurant.averageRating || 0).toFixed(1)}/5 (${reviews.length} reseñas)</span>
+              <span class="stars">${window.FoodieRank.utils.generateStars(restaurantData.averageRating || 0)}</span>
+              <span class="rating-text">${(restaurantData.averageRating || 0).toFixed(1)}/5 (${reviews.length} reseñas)</span>
             </div>
-            <div class="price-range">Rango de precios: ${restaurant.priceRange || "$"}</div>
+            <div class="price-range">Rango de precios: ${restaurantData.priceRange || "$"}</div>
             <div class="contact-info">
-              ${restaurant.contact?.phone ? `<p>📞 ${restaurant.contact.phone}</p>` : ""}
-              ${restaurant.contact?.email ? `<p>✉️ ${restaurant.contact.email}</p>` : ""}
+              ${restaurantData.contact?.phone ? `<p>📞 ${restaurantData.contact.phone}</p>` : ""}
+              ${restaurantData.contact?.email ? `<p>✉️ ${restaurantData.contact.email}</p>` : ""}
             </div>
           </div>
         </div>
 
         <div class="restaurant-description">
           <h3>Descripción</h3>
-          <p>${restaurant.description || "Sin descripción disponible"}</p>
+          <p>${restaurantData.description || "Sin descripción disponible"}</p>
         </div>
 
         ${isAuthenticated ? `
@@ -302,7 +319,7 @@
                       (review) => `
               <div class="review-item">
                 <div class="review-header">
-                  <span class="reviewer-name">${review.user?.name || "Usuario anónimo"}</span>
+                  <span class="reviewer-name">${review.userId?.name || review.user?.name || "Usuario anónimo"}</span>
                   <span class="review-rating">${window.FoodieRank.utils.generateStars(review.rating)}</span>
                   <span class="review-date">${new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
@@ -331,6 +348,7 @@
     const actualDishId = dishId || dishData._id;
 
     console.log('Displaying dish modal with ID:', actualDishId); // Debug
+    console.log('Dish reviews to display:', reviews); // Debug
 
     container.innerHTML = `
       <div class="dish-detail" data-dish-id="${actualDishId}">
@@ -344,7 +362,7 @@
               <span class="stars">${window.FoodieRank.utils.generateStars(dishData.averageRating || 0)}</span>
               <span class="rating-text">${(dishData.averageRating || 0).toFixed(1)}/5 (${reviews.length} reseñas)</span>
             </div>
-            <p class="restaurant-info">En: ${dishData.restaurant?.name || "Restaurante"}</p>
+            <p class="restaurant-info">En: ${dishData.restaurant?.name || dishData.restaurantId?.name || "Restaurante"}</p>
           </div>
         </div>
 
@@ -386,7 +404,7 @@
                       (review) => `
               <div class="review-item">
                 <div class="review-header">
-                  <span class="reviewer-name">${review.user?.name || "Usuario anónimo"}</span>
+                  <span class="reviewer-name">${review.userId?.name || review.user?.name || "Usuario anónimo"}</span>
                   <span class="review-rating">${window.FoodieRank.utils.generateStars(review.rating)}</span>
                   <span class="review-date">${new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
