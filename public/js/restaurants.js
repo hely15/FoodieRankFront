@@ -129,10 +129,6 @@
           <h3>${restaurant.name}</h3>
           <p class="restaurant-cuisine">${Array.isArray(restaurant.cuisine) ? restaurant.cuisine.join(", ") : restaurant.cuisine || "Cocina variada"}</p>
           <p class="restaurant-address">${restaurant.address?.street || ""}</p>
-          <div class="restaurant-rating">
-            <span class="stars">${window.FoodieRank.utils.generateStars(restaurant.averageRating || 0)}</span>
-            <span class="rating-text">${(restaurant.averageRating || 0).toFixed(1)}/5</span>
-          </div>
           <div class="restaurant-price">
             <span class="price-range">${restaurant.priceRange || "$"}</span>
           </div>
@@ -198,10 +194,6 @@
         <div class="dish-info">
           <p class="dish-description">${window.FoodieRank.utils.truncateText(dish.description || "", 100)}</p>
           <div class="dish-price">${window.FoodieRank.utils.formatPrice(dish.price || 0)}</div>
-          <div class="dish-rating">
-            <span class="stars">${window.FoodieRank.utils.generateStars(dish.averageRating || 0)}</span>
-            <span class="rating-text">${(dish.averageRating || 0).toFixed(1)}/5</span>
-          </div>
         </div>
       </div>
     `,
@@ -220,17 +212,34 @@
   // Mostrar detalles del restaurante
   async function showRestaurantDetails(restaurantId) {
     try {
+      console.log("[v0] Fetching restaurant details for ID:", restaurantId) // Debug
+
       const restaurant = await window.FoodieRank.api.getRestaurantById(restaurantId)
       const reviewsResponse = await window.FoodieRank.api.getReviews({ restaurant: restaurantId, limit: 10 })
+
+      console.log("[v0] Restaurant data received:", restaurant) // Debug
+      console.log("[v0] Restaurant reviews API response:", reviewsResponse) // Debug
 
       // Extract restaurant data
       const restaurantData = restaurant.data || restaurant
 
       const reviews = reviewsResponse.data?.reviews || reviewsResponse.reviews || []
-      console.log("Restaurant reviews response:", reviewsResponse) // Debug
-      console.log("Restaurant reviews extracted:", reviews) // Debug
+      console.log("[v0] Extracted reviews for restaurant:", reviews) // Debug
 
-      displayRestaurantModal(restaurantData, reviews, restaurantId)
+      const filteredReviews = reviews.filter((review) => {
+        const reviewRestaurantId = review.restaurantId || review.restaurant?._id || review.restaurant
+        console.log(
+          "[v0] Comparing review restaurant ID:",
+          reviewRestaurantId,
+          "with target restaurant ID:",
+          restaurantId,
+        )
+        return reviewRestaurantId === restaurantId
+      })
+
+      console.log("[v0] Filtered reviews for this restaurant:", filteredReviews) // Debug
+
+      displayRestaurantModal(restaurantData, filteredReviews, restaurantId)
       window.FoodieRank.utils.openModal("restaurantModal")
     } catch (error) {
       console.error("Error loading restaurant details:", error)
@@ -286,8 +295,8 @@
     const isAuthenticated =
       window.FoodieRank.auth && window.FoodieRank.auth.isAuthenticated && window.FoodieRank.auth.isAuthenticated()
 
-    console.log("Display restaurant modal - authenticated:", isAuthenticated) // Debug
-    console.log("Restaurant reviews to display:", reviewsArray) // Debug
+    console.log("[v0] Display restaurant modal - authenticated:", isAuthenticated) // Debug
+    console.log("[v0] Restaurant reviews to display:", reviewsArray) // Debug
 
     container.innerHTML = `
       <div class="restaurant-detail" data-restaurant-id="${restaurantId}">
@@ -369,8 +378,8 @@
     const reviewsArray = Array.isArray(reviews) ? reviews : []
     const reviewCount = reviewsArray.length
 
-    console.log("Displaying dish modal with ID:", actualDishId) // Debug
-    console.log("Dish reviews to display:", reviewsArray) // Debug
+    console.log("[v0] Displaying dish modal with ID:", actualDishId) // Debug
+    console.log("[v0] Dish reviews to display:", reviewsArray) // Debug
 
     container.innerHTML = `
       <div class="dish-detail" data-dish-id="${actualDishId}">

@@ -77,7 +77,9 @@
       addCategoryBtn.className = "btn-primary"
       addCategoryBtn.textContent = "+ Agregar Categoría"
       addCategoryBtn.style.marginLeft = "10px"
-      addCategoryBtn.onclick = () => {
+      addCategoryBtn.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
         if (window.FoodieRank && window.FoodieRank.admin) {
           window.FoodieRank.admin.showCreateCategoryModal()
         }
@@ -93,7 +95,9 @@
       addRestaurantBtn.className = "btn-primary"
       addRestaurantBtn.textContent = "+ Agregar Restaurante"
       addRestaurantBtn.style.marginLeft = "10px"
-      addRestaurantBtn.onclick = () => {
+      addRestaurantBtn.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
         if (window.FoodieRank && window.FoodieRank.admin) {
           window.FoodieRank.admin.showCreateRestaurantModal()
         }
@@ -109,7 +113,9 @@
       addDishBtn.className = "btn-primary"
       addDishBtn.textContent = "+ Agregar Plato"
       addDishBtn.style.marginLeft = "10px"
-      addDishBtn.onclick = () => {
+      addDishBtn.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
         if (window.FoodieRank && window.FoodieRank.admin) {
           window.FoodieRank.admin.showCreateDishModal()
         }

@@ -479,7 +479,6 @@ section {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -494,11 +493,13 @@ section {
   animation: modalSlide 0.3s ease;
   max-height: 90vh;
   overflow-y: auto;
+  margin: auto;
 }
 
 .modal-large {
   max-width: 700px;
   width: 95%;
+  max-height: 85vh;
 }
 
 @keyframes modalSlide {
