@@ -1,8 +1,8 @@
 // Utilities Module - Corregido y funcional
-(() => {
+;(() => {
   // Variables globales
-  let currentFilters = {};
-  let currentPage = 1;
+  let currentFilters = {}
+  let currentPage = 1
 
   // DOM Elements getter
   function getElements() {
@@ -29,19 +29,19 @@
       restaurantsGrid: document.getElementById("restaurantsGrid"),
       dishesGrid: document.getElementById("dishesGrid"),
       pagination: document.getElementById("pagination"),
-    };
+    }
   }
 
   // Utility Functions
   function showLoading(element) {
     if (element) {
-      element.innerHTML = '<div class="loading">Cargando...</div>';
+      element.innerHTML = '<div class="loading">Cargando...</div>'
     }
   }
 
   function showError(element, message) {
     if (element) {
-      element.innerHTML = `<div class="error">Error: ${message}</div>`;
+      element.innerHTML = `<div class="error">Error: ${message}</div>`
     }
   }
 
@@ -49,53 +49,69 @@
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
       currency: "MXN",
-    }).format(price);
+    }).format(price)
   }
 
   function generateStars(rating) {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5 ? 1 : 0;
-    const emptyStars = 5 - fullStars - halfStar;
+    const fullStars = Math.floor(rating)
+    const halfStar = rating % 1 >= 0.5 ? 1 : 0
+    const emptyStars = 5 - fullStars - halfStar
 
-    return "★".repeat(fullStars) + (halfStar ? "☆" : "") + "☆".repeat(emptyStars);
+    let starsHTML = ""
+
+    // Add full stars
+    for (let i = 0; i < fullStars; i++) {
+      starsHTML += '<span class="star filled">★</span>'
+    }
+
+    // Add half star if needed
+    if (halfStar) {
+      starsHTML += '<span class="star half">★</span>'
+    }
+
+    // Add empty stars
+    for (let i = 0; i < emptyStars; i++) {
+      starsHTML += '<span class="star empty">☆</span>'
+    }
+
+    return starsHTML
   }
 
   function truncateText(text, maxLength) {
-    if (!text) return "";
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+    if (!text) return ""
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text
   }
 
   // Modal Functions
   function openModal(modalId) {
-    const modal = document.getElementById(modalId);
+    const modal = document.getElementById(modalId)
     if (modal) {
-      modal.style.display = "block";
-      console.log('Modal opened:', modalId); // Debug
+      modal.style.display = "block"
+      console.log("Modal opened:", modalId) // Debug
     } else {
-      console.log('Modal not found:', modalId); // Debug
+      console.log("Modal not found:", modalId) // Debug
     }
   }
-  
-  
+
   function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
+    const modal = document.getElementById(modalId)
     if (modal) {
-      modal.style.display = "none";
-      console.log('Modal closed:', modalId); // Debug
+      modal.style.display = "none"
+      console.log("Modal closed:", modalId) // Debug
     } else {
-      console.log('Modal not found for closing:', modalId); // Debug
+      console.log("Modal not found for closing:", modalId) // Debug
     }
   }
 
   // Notification Function
   function showNotification(message, type = "info") {
     // Remove existing notifications
-    const existingNotifications = document.querySelectorAll(".notification");
-    existingNotifications.forEach((n) => n.remove());
+    const existingNotifications = document.querySelectorAll(".notification")
+    existingNotifications.forEach((n) => n.remove())
 
     // Create notification element
-    const notification = document.createElement("div");
-    notification.className = `notification notification-${type}`;
+    const notification = document.createElement("div")
+    notification.className = `notification notification-${type}`
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -111,146 +127,146 @@
         gap: 10px;
         animation: slideIn 0.3s ease;
         max-width: 300px;
-    `;
+    `
 
     notification.innerHTML = `
         <span>${message}</span>
         <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: 10px;">&times;</button>
-    `;
+    `
 
-    document.body.appendChild(notification);
+    document.body.appendChild(notification)
 
     // Auto remove after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.remove();
+        notification.remove()
       }
-    }, 5000);
+    }, 5000)
   }
 
   // Search and Filter Functions
   function handleSearch() {
-    const elements = getElements();
-    const searchTerm = elements.searchInput.value.trim();
+    const elements = getElements()
+    const searchTerm = elements.searchInput.value.trim()
 
     if (searchTerm) {
-      currentFilters.search = searchTerm;
+      currentFilters.search = searchTerm
     } else {
-      delete currentFilters.search;
+      delete currentFilters.search
     }
-    
-    currentPage = 1;
-    
+
+    currentPage = 1
+
     if (window.FoodieRank && window.FoodieRank.restaurants) {
-      window.FoodieRank.restaurants.loadRestaurants(currentFilters);
+      window.FoodieRank.restaurants.loadRestaurants(currentFilters)
     }
   }
 
   function handleCuisineFilter() {
-    const elements = getElements();
-    const cuisine = elements.cuisineFilter.value;
+    const elements = getElements()
+    const cuisine = elements.cuisineFilter.value
 
     if (cuisine) {
-      currentFilters.cuisine = cuisine;
+      currentFilters.cuisine = cuisine
     } else {
-      delete currentFilters.cuisine;
+      delete currentFilters.cuisine
     }
-    
-    currentPage = 1;
-    
+
+    currentPage = 1
+
     if (window.FoodieRank && window.FoodieRank.restaurants) {
-      window.FoodieRank.restaurants.loadRestaurants(currentFilters);
+      window.FoodieRank.restaurants.loadRestaurants(currentFilters)
     }
   }
 
   function handlePriceFilter() {
-    const elements = getElements();
-    const priceRange = elements.priceFilter.value;
+    const elements = getElements()
+    const priceRange = elements.priceFilter.value
 
     if (priceRange) {
-      currentFilters.priceRange = priceRange;
+      currentFilters.priceRange = priceRange
     } else {
-      delete currentFilters.priceRange;
+      delete currentFilters.priceRange
     }
-    
-    currentPage = 1;
-    
+
+    currentPage = 1
+
     if (window.FoodieRank && window.FoodieRank.restaurants) {
-      window.FoodieRank.restaurants.loadRestaurants(currentFilters);
+      window.FoodieRank.restaurants.loadRestaurants(currentFilters)
     }
   }
 
   // Pagination Functions
   function updatePagination(paginationInfo) {
-    const elements = getElements();
-    
-    if (!paginationInfo || !elements.pagination) return;
+    const elements = getElements()
 
-    const { total, page, limit } = paginationInfo;
-    const totalPages = Math.ceil(total / limit);
+    if (!paginationInfo || !elements.pagination) return
+
+    const { total, page, limit } = paginationInfo
+    const totalPages = Math.ceil(total / limit)
 
     if (totalPages <= 1) {
-      elements.pagination.innerHTML = "";
-      return;
+      elements.pagination.innerHTML = ""
+      return
     }
 
-    let paginationHTML = "";
+    let paginationHTML = ""
 
     // Previous button
     if (page > 1) {
-      paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${page - 1})">Anterior</button>`;
+      paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${page - 1})">Anterior</button>`
     }
 
     // Page numbers
-    const startPage = Math.max(1, page - 2);
-    const endPage = Math.min(totalPages, page + 2);
+    const startPage = Math.max(1, page - 2)
+    const endPage = Math.min(totalPages, page + 2)
 
     for (let i = startPage; i <= endPage; i++) {
       if (i === page) {
-        paginationHTML += `<button class="pagination-btn active">${i}</button>`;
+        paginationHTML += `<button class="pagination-btn active">${i}</button>`
       } else {
-        paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${i})">${i}</button>`;
+        paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${i})">${i}</button>`
       }
     }
 
     // Next button
     if (page < totalPages) {
-      paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${page + 1})">Siguiente</button>`;
+      paginationHTML += `<button class="pagination-btn" onclick="window.FoodieRank.utils.changePage(${page + 1})">Siguiente</button>`
     }
 
-    elements.pagination.innerHTML = paginationHTML;
+    elements.pagination.innerHTML = paginationHTML
   }
 
   function changePage(page) {
-    currentPage = page;
-    
+    currentPage = page
+
     if (window.FoodieRank && window.FoodieRank.restaurants) {
       window.FoodieRank.restaurants.loadRestaurants({
         ...currentFilters,
-        page: currentPage
-      });
+        page: currentPage,
+      })
     }
   }
 
   // Get current filters and page
   function getCurrentFilters() {
-    return { ...currentFilters };
+    return { ...currentFilters }
   }
 
   function getCurrentPage() {
-    return currentPage;
+    return currentPage
   }
 
   function setCurrentPage(page) {
-    currentPage = page;
+    currentPage = page
   }
 
   function setCurrentFilters(filters) {
-    currentFilters = { ...filters };
+    currentFilters = { ...filters }
   }
 
   // CSS para animación de notificaciones
-  const style = document.createElement('style');
+  const style = document.createElement("style")
   style.textContent = `
     @keyframes slideIn {
       from {
@@ -262,11 +278,11 @@
         opacity: 1;
       }
     }
-  `;
-  document.head.appendChild(style);
+  `
+  document.head.appendChild(style)
 
   // Exponer utilidades globalmente
-  window.FoodieRank = window.FoodieRank || {};
+  window.FoodieRank = window.FoodieRank || {}
   window.FoodieRank.utils = {
     getElements,
     showLoading,
@@ -285,6 +301,6 @@
     getCurrentFilters,
     getCurrentPage,
     setCurrentPage,
-    setCurrentFilters
-  };
-})();
+    setCurrentFilters,
+  }
+})()
